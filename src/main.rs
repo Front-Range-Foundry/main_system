@@ -1,11 +1,64 @@
-fn main() {
-    println!("INGN SYSTEMS - MAIN - VERSION 0.0.1");
-    println!("ENTER AUTHORIZATION KEY...");
-    // here shall lie the authentication / authorization system 
-    // along with an integration with park staff data 
-    // and permissions APIs 
+use std::env; 
 
-    println!("WELCOME USER. BOOTING UP...");
+struct Commander {
+    is_authorized: bool,
+    is_admin_authorized: bool,
+    user: String,
+    login_attempts: u16,
+}
+
+impl Commander { 
+    fn new() -> Commander {
+        Commander {
+            is_authorized: false,
+            is_admin_authorized: false,
+            user: String::from(""),
+            login_attempts: 2,
+        }
+    }
+
+    fn authorize(&mut self, arguments: &Vec<String>) { 
+        let flag = &arguments[2];
+        let code = &arguments[3];
+        if flag != "-c" && code != "please" {
+            println!("ACCESS_DENIED");
+            self.login_attempts = self.login_attempts + 1;
+            if (self.login_attempts > 2) {
+                while true {
+                    println!("AH AH AH! YOU DIDN'T SAY THE MAGIC WORD!");
+                }
+            }
+        }
+    }
+
+    fn parse_command(&mut self) {
+        let args: Vec<String> = env::args().collect();
+        println!("{:?}", args);
+        let command = &args[1] as &str;
+        println!("{:?}", command);
+
+        match command { 
+            "access" => {
+                self.authorize(&args);
+            }
+            "admin" => println!("admin"),
+            _ => println!("unknown command"),
+        }
+    }
+
+    fn start_system(&self) {
+        println!("INGN SYSTEMS - MAIN - VERSION 0.0.1");
+        println!("ENTER AUTHORIZATION KEY...");
+        println!("WELCOME USER. BOOTING UP...");
+    }
+}
+
+fn main() {
+
+    let mut commander = Commander::new();
+    commander.start_system();
+    commander.parse_command();
+
     // here shall lie the preparedness functions such as 
     // - electrical systems can be turned on 
     // = water systems can be turned on
