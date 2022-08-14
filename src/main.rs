@@ -1,55 +1,113 @@
-use std::env; 
+use core::time;
+use std::thread;
+use dialoguer::Input;
 
+enum CommandName {
+    Exit,
+    Access,
+    InvalidCommand,
+}
+
+enum CommandFlag {
+    NoFlag,
+    AuthAsSuperUser(String),
+}
+
+fn build_command(input: String) -> (CommandName, CommandFlag) {
+
+    let mut default_command_name = "help";
+    let mut default_command_flag = "";
+    let mut default_input = "";
+
+    let trimmed_input = input.trim();
+    let split_input = trimmed_input.split(" ");
+    let as_vec = split_input.collect::<Vec<&str>>();
+
+    if as_vec.len() >= 3 {
+        default_command_name = as_vec[0];
+        default_command_flag = as_vec[1];
+        default_input = as_vec[2];
+    } else if as_vec.len() == 2 {
+        default_command_name = as_vec[0];
+        default_command_flag = as_vec[1];
+    } else if as_vec.len() == 1 {
+        default_command_name = as_vec[0];
+    }
+    let command_name: CommandName;
+    let command_flag: CommandFlag;
+    match default_command_name {
+        "exit" => command_name = CommandName::Exit,
+        "access" => command_name = CommandName::Access,
+        _ => command_name = CommandName::InvalidCommand
+    }
+
+    match default_command_flag {
+        "-su" => command_flag = CommandFlag::AuthAsSuperUser(String::from(default_input)),
+        "security" => command_flag = CommandFlag::AuthAsSuperUser(String::from(default_input)),
+        "main" => command_flag = CommandFlag::AuthAsSuperUser(String::from(default_input)),
+        _ => command_flag = CommandFlag::NoFlag
+    }
+
+    (command_name, command_flag)
+    
+} 
 struct Commander {
-    is_authorized: bool,
-    is_admin_authorized: bool,
-    user: String,
-    login_attempts: u16,
+    _is_authorized: bool,
+    _is_admin_authorized: bool,
+    _user: String,
+    login_attempts: u8,
 }
 
 impl Commander { 
     fn new() -> Commander {
         Commander {
-            is_authorized: false,
-            is_admin_authorized: false,
-            user: String::from(""),
-            login_attempts: 2,
+            _is_authorized: false,
+            _is_admin_authorized: false,
+            _user: String::from(""),
+            login_attempts: 0,
         }
     }
 
-    fn authorize(&mut self, arguments: &Vec<String>) { 
-        let flag = &arguments[2];
-        let code = &arguments[3];
-        if flag != "-c" && code != "please" {
-            println!("ACCESS_DENIED");
+    fn authorize(&mut self, code: String) { 
+        if code != "please" {
+            thread::sleep(time::Duration::from_millis(500));
             self.login_attempts = self.login_attempts + 1;
-            if (self.login_attempts > 2) {
-                while true {
-                    println!("AH AH AH! YOU DIDN'T SAY THE MAGIC WORD!");
+            if self.login_attempts < 3 {
+                println!("access: PERMISSION DENIED");
+            } else {
+                println!("access: PERMISSION DENIED....and...");
+                thread::sleep(time::Duration::from_millis(500));
+                loop {
+                    thread::sleep(time::Duration::from_millis(25));
+                    println!("YOU DIDN'T SAY THE MAGIC WORD!");
                 }
             }
         }
     }
 
-    fn parse_command(&mut self) {
-        let args: Vec<String> = env::args().collect();
-        println!("{:?}", args);
-        let command = &args[1] as &str;
-        println!("{:?}", command);
-
-        match command { 
-            "access" => {
-                self.authorize(&args);
-            }
-            "admin" => println!("admin"),
-            _ => println!("unknown command"),
+    fn start_system(&mut self) {
+        println!("Jurassic Park, System Security Interface");
+        println!("Version 4.0.5, Alpha E");
+        println!("Ready...");
+        loop { 
+            let command: String = Input::new().with_prompt(">").interact().expect("Got a weird command.");
+            self.handle_command(command);
         }
     }
 
-    fn start_system(&self) {
-        println!("INGN SYSTEMS - MAIN - VERSION 0.0.1");
-        println!("ENTER AUTHORIZATION KEY...");
-        println!("WELCOME USER. BOOTING UP...");
+    fn handle_command(&mut self, input: String) {
+        // need to complicate this with d
+        let command = build_command(input);
+        // command || flag  - > might make sense to use enum
+        match command {
+            (CommandName::Exit, CommandFlag::NoFlag) => {
+                std::process::exit(0);
+            },
+            (CommandName::Access, CommandFlag::AuthAsSuperUser(code)) => {
+                self.authorize(code);
+            },
+            _ => println!("Unknown command."),
+        }
     }
 }
 
@@ -57,7 +115,6 @@ fn main() {
 
     let mut commander = Commander::new();
     commander.start_system();
-    commander.parse_command();
 
     // here shall lie the preparedness functions such as 
     // - electrical systems can be turned on 
